@@ -19,7 +19,7 @@ export const addRolesOnUserCreation = beforeUserCreated  (async (event) =>
         };
 
     } else if (user?.email?.endsWith('@waltonrobotics.org')) {
-      if (isGoogleProvider) {
+      if (! isGoogleProvider) {
          logger.info(`New waltonrobotics.org user: ${user.email}. Assigning admin role.`);
          return {
             customClaims: {
