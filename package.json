@@ -1,0 +1,30 @@
+{
+  "dependencies": {
+    "firebase-tools": "^14.12.1"
+  },
+  "devDependencies": {
+    "@babel/preset-typescript": "^7.28.5",
+    "@jest/globals": "^30.2.0",
+    "@types/jest": "^29.5.0",
+    "firebase": "^12.1.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5.0.0"
+  },
+  "name": "defield-firebase",
+  "version": "1.0.0",
+  "description": "the backend of de field firebase",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "build": "cd functions && npm run build",
+    "deploy": "firebase deploy",
+    "serve": "firebase emulators:start"
+  },
+  "workspaces": [
+    "functions"
+  ],
+  "author": "",
+  "license": "ISC"
+}
