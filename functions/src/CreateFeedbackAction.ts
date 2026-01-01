@@ -1,7 +1,16 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import * as admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
+import {defineString } from 'firebase-functions/params';
 
-export const submitFeedback = onCall(async (request) => {
+// Define parameters - adjust these based on your actual config needs
+const rateLimitSeconds = defineString('RATE_LIMIT_SECONDS', { default: '60' });
+// Example if you had secrets:
+// const apiKey = defineSecret('API_KEY');
+
+export const submitFeedback = onCall({
+  // If you were using secrets, you'd include them here:
+  // secrets: [apiKey],
+}, async (request) => {
   // Require authentication (anonymous or regular)
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Authentication required.');
@@ -16,8 +25,11 @@ export const submitFeedback = onCall(async (request) => {
   if (!teamNumber || typeof teamNumber !== 'number') {
     throw new HttpsError('invalid-argument', 'Team number required.');
   }
+  
+  const db = getFirestore();
+  
   // Verify team number exists in the teams collection
-  const teamDoc = await admin.firestore().collection('teams').doc(teamNumber.toString()).get();
+  const teamDoc = await db.collection('teams').doc(teamNumber.toString()).get();
   if (!teamDoc.exists) {
     throw new HttpsError('not-found', 'Team number does not exist.');
   }
@@ -26,12 +38,14 @@ export const submitFeedback = onCall(async (request) => {
     throw new HttpsError('invalid-argument', 'Session ID required.');
   }
   // Verify sessionId exists in the sessions collection
-  const sessionDoc = await admin.firestore().collection('sessions').doc(sessionId).get();
+  const sessionDoc = await db.collection('sessions').doc(sessionId).get();
   if (!sessionDoc.exists) {
     throw new HttpsError('not-found', 'Session ID does not exist.');
   }
-  // Rate limit: Only allow one feedback per 60 seconds per user
-  const feedbackRef = admin.firestore().collection('feedback');
+  
+  // Rate limit: Use param for rate limit duration
+  const rateLimitMs = parseInt(rateLimitSeconds.value()) * 1000;
+  const feedbackRef = db.collection('feedback');
   const recent = await feedbackRef
     .where('userId', '==', uid)
     .orderBy('createdAt', 'desc')
@@ -41,7 +55,7 @@ export const submitFeedback = onCall(async (request) => {
   if (!recent.empty) {
     const last = recent.docs[0].data();
     const now = Date.now();
-    if (last.createdAt && now - last.createdAt.toMillis() < 60000) {
+    if (last.createdAt && now - last.createdAt.toMillis() < rateLimitMs) {
       throw new HttpsError('resource-exhausted', 'Please wait before submitting more feedback.');
     }
   }

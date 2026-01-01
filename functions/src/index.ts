@@ -31,7 +31,7 @@ setGlobalOptions({ maxInstances: 10 });
 
 export { submitFeedback } from './CreateFeedbackAction';
 export { createTeamContact } from './CreateTeamContactAction';
-export { processSignUp } from './AuthTriggers'
+export { addRolesOnUserCreation } from './AuthTriggers'
 
 // export const helloWorld = onRequest((request, response) => {
 //   logger.info("Hello logs!", {structuredData: true});

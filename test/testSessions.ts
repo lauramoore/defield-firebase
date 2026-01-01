@@ -1,53 +1,46 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { initializeApp, deleteApp, FirebaseApp } from 'firebase/app';
+import { getFirestore, doc, getDoc, collection, getDocs, connectFirestoreEmulator, terminate, Firestore } from 'firebase/firestore';
+import { describe, it, beforeAll, afterAll, expect } from '@jest/globals';
 
 // Firebase configuration
 const firebaseConfig = {
-    // Add your Firebase config here
-    apiKey: "your-api-key",
-    authDomain: "your-project.firebaseapp.com",
-    projectId: "your-project-id",
-    storageBucket: "your-project.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "your-app-id"
+    projectId: "defield-firebase",
+    apiKey: "test-api-key",
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+describe('Sessions Integration Tests', () => {
+    let app: FirebaseApp;
+    let db: Firestore;
 
-async function testReadSessions() {
-    try {
-        // Test reading all sessions
-        console.log('Reading sessions collection...');
+    beforeAll(() => {
+        app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        // Connect to the Firestore Emulator (default port 8080)
+        connectFirestoreEmulator(db, '127.0.0.1', 8080);
+    });
+
+    afterAll(async () => {
+        // Terminate connection to allow Jest to exit
+        await terminate(db);
+        await deleteApp(app);
+    });
+
+    it('should read sessions collection', async () => {
         const sessionsRef = collection(db, 'sessions');
         const snapshot = await getDocs(sessionsRef);
         
-        if (snapshot.empty) {
-            console.log('No sessions found');
-        } else {
-            console.log(`Found ${snapshot.size} sessions:`);
-            snapshot.forEach((doc) => {
-                console.log(`Session ID: ${doc.id}`, doc.data());
-            });
-        }
+        expect(snapshot).toBeDefined();
+        console.log(`Found ${snapshot.size} sessions`);
+        snapshot.forEach((doc) => {
+            console.log(`Session ID: ${doc.id}`, doc.data());
+        });
+    });
 
-        // Test reading specific session document
-        const sessionId = 'test-session-id'; // Replace with actual session ID
-        console.log(`\nReading specific session: ${sessionId}`);
+    it('should read specific session document', async () => {
+        const sessionId = 'test-session-id';
         const sessionRef = doc(db, 'sessions', sessionId);
         const sessionDoc = await getDoc(sessionRef);
         
-        if (sessionDoc.exists()) {
-            console.log('Session data:', sessionDoc.data());
-        } else {
-            console.log('Session not found');
-        }
-        
-    } catch (error) {
-        console.error('Error reading sessions:', error);
-    }
-}
-
-// Run the test
-testReadSessions();
+        expect(sessionDoc).toBeDefined();
+    });
+});
