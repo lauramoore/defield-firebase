@@ -13,6 +13,7 @@ describe('submitFeedback Cloud Function', () => {
   let auth: any;
   let functions: any;
   let submitFeedback: any;
+  let db: any
 
   beforeAll(async () => {
     app = initializeApp(firebaseConfig);
@@ -20,7 +21,7 @@ describe('submitFeedback Cloud Function', () => {
     connectAuthEmulator(auth, 'http://localhost:9099');
     functions = getFunctions(app);
     connectFunctionsEmulator(functions, 'localhost', 5001);
-    
+
     await signInAnonymously(auth);
     submitFeedback = httpsCallable(functions, 'submitFeedback');
   });

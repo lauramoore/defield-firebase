@@ -8,6 +8,8 @@ const rateLimitSeconds = defineString('RATE_LIMIT_SECONDS', { default: '60' });
 // const apiKey = defineSecret('API_KEY');
 
 export const submitFeedback = onCall({
+  cors: true,
+  region: "us-central1"
   // If you were using secrets, you'd include them here:
   // secrets: [apiKey],
 }, async (request) => {
@@ -34,14 +36,17 @@ export const submitFeedback = onCall({
     throw new HttpsError('not-found', 'Team number does not exist.');
   }
   
-  if (!sessionId || typeof sessionId !== 'string') {
-    throw new HttpsError('invalid-argument', 'Session ID required.');
+  if (sessionId) {
+    if( typeof sessionId !== 'string' || sessionId.trim().length < 7) {
+       throw new HttpsError('invalid-argument', 'Not a valid sessionId.');
+    }
+     // Verify sessionId exists in the sessions collection
+     const sessionDoc = await db.collection('sessions').doc(sessionId).get();
+     if (!sessionDoc.exists) {
+        throw new HttpsError('not-found', 'Session ID does not exist.');
+     }
   }
-  // Verify sessionId exists in the sessions collection
-  const sessionDoc = await db.collection('sessions').doc(sessionId).get();
-  if (!sessionDoc.exists) {
-    throw new HttpsError('not-found', 'Session ID does not exist.');
-  }
+ 
   
   // Rate limit: Use param for rate limit duration
   const rateLimitMs = parseInt(rateLimitSeconds.value()) * 1000;
